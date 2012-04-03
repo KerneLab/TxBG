@@ -263,6 +263,29 @@ public class TextBatchGenerator implements Runnable
 		}
 	}
 
+	protected JSAN filterTagList(JSAN tags, JSON tag)
+	{
+		JSAN result = new JSAN();
+
+		if (tags != null && !tags.isEmpty()) {
+
+			JSON t = null;
+			JSAN tc = null;
+			boolean ts = true;
+
+			for (Object ot : tags) {
+
+				if ((tc = JSON.AsJSAN(ot)) != null) {
+					ts = Satisfies(tag, tc);
+				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
+					result.add(t);
+				}
+			}
+		}
+
+		return result;
+	}
+
 	public void generate(JSON json, JSON tags)
 	{
 		JSAN tag = json.attrJSAN("tag");
@@ -358,6 +381,14 @@ public class TextBatchGenerator implements Runnable
 				if ((tc = JSON.AsJSAN(ot)) != null) {
 					ts = Satisfies(tags, tc);
 				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
+
+					t = t.clone();
+
+					for (Entry<String, Object> entry : t.entrySet()) {
+						if (JSON.IsJSAN(entry.getValue())) {
+							t.put(entry.getKey(), filterTagList((JSAN) entry.getValue(), tags));
+						}
+					}
 
 					JSON temp = tags.clone();
 					temp.putAll(t);
