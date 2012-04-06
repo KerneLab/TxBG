@@ -224,15 +224,17 @@ public class TextBatchGeneratorGUI extends JFrame
 		return processing;
 	}
 
-	protected synchronized TextBatchGeneratorGUI processing(boolean processing)
+	protected TextBatchGeneratorGUI processing(boolean processing)
 	{
 		if (processing != this.processing) {
 			this.processing = processing;
 			if (processing) {
+				magic.setEnabled(false);
 				shifter.start();
 			} else {
 				shifter.stop();
 				refresher.stop();
+				magic.setEnabled(true);
 			}
 		}
 

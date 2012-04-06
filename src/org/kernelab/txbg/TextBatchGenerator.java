@@ -428,6 +428,9 @@ public class TextBatchGenerator implements Runnable
 	protected TextBatchGenerator generating(boolean generating)
 	{
 		this.generating = generating;
+		if (gui != null) {
+			gui.processing(generating);
+		}
 		return this;
 	}
 
@@ -454,10 +457,6 @@ public class TextBatchGenerator implements Runnable
 	public void run()
 	{
 		if (list != null && list.size() > 0) {
-
-			if (gui != null) {
-				gui.processing(true);
-			}
 
 			for (File file : list) {
 				LAST_DIR = file.getParent();
@@ -535,10 +534,6 @@ public class TextBatchGenerator implements Runnable
 
 				JOptionPane.showMessageDialog(gui, "文本填充结果保存在\n" + result.getAbsolutePath(), "完成",
 						JOptionPane.INFORMATION_MESSAGE);
-			}
-
-			if (gui != null) {
-				gui.processing(false);
 			}
 		}
 		generating(false);
