@@ -238,6 +238,37 @@ public class TextBatchGenerator implements Runnable
 		return result;
 	}
 
+	protected JSON extendTag(JSON tag, JSON tags)
+	{
+		TextFiller filler = new TextFiller();
+
+		for (Entry<String, Object> entry : tag.entrySet()) {
+
+			Object value = entry.getValue();
+
+			if (value instanceof String) {
+
+				String tmp = (String) value;
+				String key = entry.getKey();
+
+				Object latest = tags.get(key);
+				if (latest != null) {
+					tmp = filler.reset(tmp).fillWith(key, latest).toString();
+					tag.put(key, tmp);
+				}
+			} else if (value instanceof JSAN) {
+				JSON t = null;
+				for (Object o : (JSAN) value) {
+					if ((t = JSON.AsJSON(o)) != null) {
+						extendTag(t, tags);
+					}
+				}
+			}
+		}
+
+		return tag;
+	}
+
 	protected void fillTemplate(String tmp, JSON tags)
 	{
 		Tools.debug(filler.reset(tmp).fillWith(tags).toString());
@@ -255,7 +286,7 @@ public class TextBatchGenerator implements Runnable
 				if ((tc = JSON.AsJSAN(t)) != null) {
 					ts = Satisfies(tags, tc);
 				} else if (ts && (tt = JSON.AsJSON(t)) != null) {
-					tags.putAll(tt);
+					tags.putAll(extendTag(tt.clone(), tags));
 				} else if (ts && t != null) {
 					fillTemplate(t.toString(), tags);
 				}
@@ -324,7 +355,7 @@ public class TextBatchGenerator implements Runnable
 				for (Object ot : tag) {
 					if (!JSON.IsJSAN(ot) && (t = JSON.AsJSON(ot)) != null) {
 						temp = tags.clone();
-						temp.putAll(t);
+						temp.putAll(extendTag(t.clone(), tags));
 						accumulate(temp, aqm, aqms);
 					}
 				}
@@ -362,7 +393,7 @@ public class TextBatchGenerator implements Runnable
 									}
 								}
 
-								tags.putAll(at);
+								tags.putAll(extendTag(at, tags));
 							}
 							break;
 
@@ -391,7 +422,7 @@ public class TextBatchGenerator implements Runnable
 					}
 
 					JSON temp = tags.clone();
-					temp.putAll(t);
+					temp.putAll(extendTag(t, temp));
 
 					fillTemplates(tmp, temp);
 
