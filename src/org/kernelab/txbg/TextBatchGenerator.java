@@ -210,9 +210,13 @@ public class TextBatchGenerator implements Runnable
 		return this;
 	}
 
-	public File chooseResultFile()
+	public File chooseResultFile(File file)
 	{
 		JFileChooser fc = new JFileChooser(LAST_DIR);
+
+		if (file != null) {
+			fc.setSelectedFile(file);
+		}
 
 		fc.setDialogTitle("将生成结果文件保存为...");
 
@@ -220,7 +224,7 @@ public class TextBatchGenerator implements Runnable
 
 		s: while (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
 			if (fc.getSelectedFile().exists()) {
-				switch (JOptionPane.showConfirmDialog(gui, "文件已存在，是否覆盖？", "保存目标冲突", JOptionPane.YES_NO_CANCEL_OPTION))
+				switch (JOptionPane.showConfirmDialog(gui, "目标文件已存在，是否覆盖？", "保存目标冲突", JOptionPane.YES_NO_CANCEL_OPTION))
 				{
 					case JOptionPane.CANCEL_OPTION:
 						result = null;
@@ -498,21 +502,22 @@ public class TextBatchGenerator implements Runnable
 			PrintStream ps = null;
 
 			do {
-				result = chooseResultFile();
+				result = chooseResultFile(result);
 
 				if (result == null) {
 					break;
 				}
 
+				String resultFilePath = result.getAbsolutePath();
+
 				boolean legal = true;
 
 				if (legal) {
-					String resultFilePath = result.getAbsolutePath();
 					for (File file : list) {
 						if (file.getAbsolutePath().equals(resultFilePath)) {
 							legal = false;
-							JOptionPane.showMessageDialog(gui, "生成结果文件不能覆盖模板数据文件，请重新选择！", "错误",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(gui, "生成结果文件\n" + resultFilePath + "\n不能覆盖模板数据文件，请重新选择！",
+									"错误", JOptionPane.ERROR_MESSAGE);
 							break;
 						}
 					}
@@ -523,8 +528,8 @@ public class TextBatchGenerator implements Runnable
 						ps = new PrintStream(result, DEFAULT_CHARSET_NAME);
 					} catch (FileNotFoundException e) {
 						legal = false;
-						JOptionPane.showMessageDialog(gui, "目标生成文件暂不可写入，请检查该文件是否被其他程序占用！", "警告",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(gui, "生成结果文件\n" + resultFilePath + "\n暂不可写入，请检查该文件是否被其他程序占用！",
+								"警告", JOptionPane.ERROR_MESSAGE);
 					} catch (UnsupportedEncodingException e) {
 						e.printStackTrace();
 					}
@@ -550,6 +555,7 @@ public class TextBatchGenerator implements Runnable
 						process(data);
 
 					} catch (RuntimeException e) {
+						e.printStackTrace();
 						if (JOptionPane.showConfirmDialog(gui, "不能正确解析模板数据文件：\n" + data.getAbsolutePath()
 								+ "\n是否继续处理剩余的文件？", "错误", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION)
 						{
