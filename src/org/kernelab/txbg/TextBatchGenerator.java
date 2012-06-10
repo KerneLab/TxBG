@@ -39,13 +39,13 @@ public class TextBatchGenerator implements Runnable
 	static {
 		Context context = new Context();
 		context.read(new File("./lib/config.js"));
-		if (context.containsKey("charSetName")) {
+		if (context.attr("charSetName") != null) {
 			DEFAULT_CHARSET_NAME = context.attrString("charSetName");
 		}
-		if (context.containsKey("extentionLibraries")) {
+		if (context.attr("extentionLibraries") != null) {
 			ExtensionLoader.getInstance().load(context.attrJSAN("extentionLibraries"));
 		}
-		if (context.containsKey("conditionInterpreters")) {
+		if (context.attr("conditionInterpreters") != null) {
 			CONDITION_INTERPRETERS = Arbiter.LoadInterpreters(context.attrJSAN("conditionInterpreters"));
 		}
 	}
