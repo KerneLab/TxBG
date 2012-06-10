@@ -268,4 +268,9 @@ public class TextBatchGeneratorGUI extends JFrame
 		}
 		refresher.start();
 	}
+
+	public TextBatchGenerator txbg()
+	{
+		return txbg;
+	}
 }

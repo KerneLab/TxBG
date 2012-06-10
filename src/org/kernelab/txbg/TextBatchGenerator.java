@@ -11,24 +11,44 @@ import java.util.Map.Entry;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import org.kernelab.basis.Arbiter;
+import org.kernelab.basis.Arbiter.ConditionInterpreter;
+import org.kernelab.basis.ExtensionLoader;
 import org.kernelab.basis.JSON;
+import org.kernelab.basis.JSON.Context;
+import org.kernelab.basis.JSON.JSAN;
 import org.kernelab.basis.TextFiller;
 import org.kernelab.basis.Tools;
-import org.kernelab.basis.JSON.JSAN;
 
 public class TextBatchGenerator implements Runnable
 {
-	public static String		DEFAULT_CHARSET_NAME	= "GBK";
+	public static String							DEFAULT_CHARSET_NAME	= "GBK";
 
-	protected static final int	LOGICAL_NOT				= -1;
+	public static Iterable<ConditionInterpreter>	CONDITION_INTERPRETERS;
 
-	protected static final int	LOGICAL_OR				= 0;
+	protected static final int						LOGICAL_NOT				= -1;
 
-	protected static final int	LOGICAL_AND				= 1;
+	protected static final int						LOGICAL_OR				= 0;
 
-	protected static final int	DEFAULT_LOGIC			= LOGICAL_OR;
+	protected static final int						LOGICAL_AND				= 1;
 
-	protected static String		LAST_DIR				= ".";
+	protected static final int						DEFAULT_LOGIC			= LOGICAL_OR;
+
+	protected static String							LAST_DIR				= ".";
+
+	static {
+		Context context = new Context();
+		context.read(new File("./lib/config.js"));
+		if (context.containsKey("charSetName")) {
+			DEFAULT_CHARSET_NAME = context.attrString("charSetName");
+		}
+		if (context.containsKey("extentionLibraries")) {
+			ExtensionLoader.getInstance().load(context.attrJSAN("extentionLibraries"));
+		}
+		if (context.containsKey("conditionInterpreters")) {
+			CONDITION_INTERPRETERS = Arbiter.LoadInterpreters(context.attrJSAN("conditionInterpreters"));
+		}
+	}
 
 	/**
 	 * @param args
@@ -38,100 +58,19 @@ public class TextBatchGenerator implements Runnable
 
 	}
 
-	public static boolean Satisfies(JSON tags, JSAN cnds)
-	{
-		boolean result = true;
+	private TextBatchGeneratorGUI			gui				= null;
 
-		if (tags != null && cnds != null && !cnds.isEmpty()) {
+	private TextFiller						filler			= new TextFiller();
 
-			result = false;
+	private JSON.Context					jsons			= new JSON.Context();
 
-			JSON cnd = null;
-			JSAN nst = null;
-			Object t = null;
-			Object c = null;
+	private List<File>						list			= new LinkedList<File>();
 
-			int logic = DEFAULT_LOGIC;
+	private boolean							chain;
 
-			for (Object o : cnds) {
+	private boolean							generating		= false;
 
-				if (JSON.IsJSON(o)) {
-
-					if (result && logic == DEFAULT_LOGIC) {
-						break;
-					}
-
-					boolean present = false;
-
-					if ((nst = JSON.AsJSAN(o)) != null) {
-
-						present = Satisfies(tags, nst);
-
-					} else if ((cnd = JSON.AsJSON(o)) != null) {
-
-						present = true;
-
-						for (String k : cnd.keySet()) {
-
-							t = tags.attr(k);
-							c = cnd.attr(k);
-
-							if ((t == null && c != null) || (t != null && c == null)) {
-								present = false;
-							} else if (t != null && c != null) {
-								present = t.toString().matches(c.toString());
-							}
-
-							if (!present) {
-								break;
-							}
-						}
-					}
-
-					switch (logic)
-					{
-						case LOGICAL_NOT:
-							result = !present;
-							break;
-
-						case LOGICAL_OR:
-							result = result || present;
-							break;
-
-						case LOGICAL_AND:
-							result = result && present;
-							break;
-					}
-
-					logic = DEFAULT_LOGIC;
-
-				} else if (o != null) {
-					String op = o.toString();
-					if ("!".equals(op)) {
-						logic = LOGICAL_NOT;
-					} else if ("|".equals(op)) {
-						logic = LOGICAL_OR;
-					} else if ("&".equals(op)) {
-						logic = LOGICAL_AND;
-					}
-				}
-			}
-		}
-
-		return result;
-	}
-
-	private TextBatchGeneratorGUI	gui			= null;
-
-	private TextFiller				filler		= new TextFiller();
-
-	private JSON.Context			jsons		= new JSON.Context();
-
-	private List<File>				list		= new LinkedList<File>();
-
-	private boolean					chain;
-
-	private boolean					generating	= false;
+	private Iterable<ConditionInterpreter>	interpreters	= CONDITION_INTERPRETERS;
 
 	public void acceptDataFile(File data)
 	{
@@ -172,7 +111,7 @@ public class TextBatchGenerator implements Runnable
 					for (Object oa : aqmp) {
 
 						if ((ac = JSON.AsJSAN(oa)) != null) {
-							as = Satisfies(tags, ac);
+							as = Arbiter.Arbitrate(tags, ac, interpreters);
 						} else if ((ao = JSON.AsJSON(oa)) != null) {
 
 							if (as) {
@@ -288,7 +227,7 @@ public class TextBatchGenerator implements Runnable
 
 			for (Object t : tmps) {
 				if ((tc = JSON.AsJSAN(t)) != null) {
-					ts = Satisfies(tags, tc);
+					ts = Arbiter.Arbitrate(tags, tc, interpreters);
 				} else if (ts && (tt = JSON.AsJSON(t)) != null) {
 					tags.putAll(extendTag(tt.clone(), tags));
 				} else if (ts && t != null) {
@@ -311,7 +250,7 @@ public class TextBatchGenerator implements Runnable
 			for (Object ot : tags) {
 
 				if ((tc = JSON.AsJSAN(ot)) != null) {
-					ts = Satisfies(tag, tc);
+					ts = Arbiter.Arbitrate(tag, tc, interpreters);
 				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
 					result.add(t);
 				}
@@ -414,7 +353,7 @@ public class TextBatchGenerator implements Runnable
 			for (Object ot : tag) {
 
 				if ((tc = JSON.AsJSAN(ot)) != null) {
-					ts = Satisfies(tags, tc);
+					ts = Arbiter.Arbitrate(tags, tc, interpreters);
 				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
 
 					t = t.clone();
@@ -442,7 +381,7 @@ public class TextBatchGenerator implements Runnable
 							temp.putAll(t);
 
 							if ((sc = JSON.AsJSAN(os)) != null) {
-								ss = Satisfies(temp, sc);
+								ss = Arbiter.Arbitrate(temp, sc, interpreters);
 							} else if (ss && (s = JSON.AsJSON(os)) != null) {
 								generate(s, temp);
 							}
@@ -477,6 +416,12 @@ public class TextBatchGenerator implements Runnable
 	public TextBatchGenerator gui(TextBatchGeneratorGUI gui)
 	{
 		this.gui = gui;
+		return this;
+	}
+
+	public TextBatchGenerator interpreters(Iterable<ConditionInterpreter> interpreters)
+	{
+		this.interpreters = interpreters;
 		return this;
 	}
 
