@@ -90,8 +90,10 @@ public class TextBatchGeneratorGUI extends JFrame
 
 		txbg.gui(this);
 
-		for (int i = 0; i < polar; i++) {
-			for (int j = 0; j < 4; j++) {
+		for (int i = 0; i < polar; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
 				color[i][j] = (float) Math.random();
 			}
 		}
@@ -120,10 +122,13 @@ public class TextBatchGeneratorGUI extends JFrame
 
 			public void actionPerformed(ActionEvent e)
 			{
-				if (magic.isSelected()) {
+				if (magic.isSelected())
+				{
 					files().clear();
 					magic.setBorder(SELECTED_BORDER);
-				} else {
+				}
+				else
+				{
 					txbg.acceptDataFiles(files, true);
 					magic.setBorder(null);
 				}
@@ -136,7 +141,8 @@ public class TextBatchGeneratorGUI extends JFrame
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
-				if (!processing() && !magic.isSelected()) {
+				if (!processing() && !magic.isSelected())
+				{
 					shifter.start();
 				}
 			}
@@ -144,7 +150,8 @@ public class TextBatchGeneratorGUI extends JFrame
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				if (!processing() && !magic.isSelected()) {
+				if (!processing() && !magic.isSelected())
+				{
 					shifter.stop();
 					refresher.stop();
 				}
@@ -156,29 +163,37 @@ public class TextBatchGeneratorGUI extends JFrame
 			@SuppressWarnings("unchecked")
 			public void drop(DropTargetDropEvent dtde)
 			{
-				if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-
+				if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
+				{
 					dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE);
 
 					List<File> list = null;
-					try {
+					try
+					{
 						list = (List<File>) (dtde.getTransferable().getTransferData(DataFlavor.javaFileListFlavor));
 
-						if (magic.isSelected()) {
+						if (magic.isSelected())
+						{
 							files.addAll(list);
-						} else {
+						}
+						else
+						{
 							txbg.acceptDataFiles(list, false);
 						}
 
 						dtde.dropComplete(true);
-
-					} catch (UnsupportedFlavorException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
+					}
+					catch (UnsupportedFlavorException e)
+					{
 						e.printStackTrace();
 					}
-
-				} else {
+					catch (IOException e)
+					{
+						e.printStackTrace();
+					}
+				}
+				else
+				{
 					dtde.rejectDrop();
 				}
 			}
@@ -214,8 +229,18 @@ public class TextBatchGeneratorGUI extends JFrame
 
 	private void paintMagic(Graphics2D g)
 	{
-		g.setPaint(new GradientPaint(color[0][3] * magic.getWidth(), 0, Color(color[0]),
-				color[1][3] * magic.getWidth(), magic.getHeight(), Color(color[1])));
+		float width = magic.getWidth() / 2f;
+		float height = magic.getHeight() / 2f;
+
+		float radius = (float) Math.sqrt(width * width + height * height);
+
+		double angle = (color[0][3] + color[1][3]) * Math.PI;
+
+		float x = radius * (float) Math.sin(angle);
+		float y = radius * (float) Math.cos(angle);
+
+		g.setPaint(new GradientPaint(width + x, height + y, Color(color[0]), width - x, height - y, Color(color[1])));
+
 		g.fillRect(0, 0, magic.getWidth(), magic.getHeight());
 	}
 
@@ -226,12 +251,16 @@ public class TextBatchGeneratorGUI extends JFrame
 
 	protected TextBatchGeneratorGUI processing(boolean processing)
 	{
-		if (processing != this.processing) {
+		if (processing != this.processing)
+		{
 			this.processing = processing;
-			if (processing) {
+			if (processing)
+			{
 				magic.setEnabled(false);
 				shifter.start();
-			} else {
+			}
+			else
+			{
 				shifter.stop();
 				refresher.stop();
 				magic.setEnabled(true);
@@ -243,11 +272,13 @@ public class TextBatchGeneratorGUI extends JFrame
 
 	private void refreshColor()
 	{
-		for (int i = 0; i < polar; i++) {
+		for (int i = 0; i < polar; i++)
+		{
 			float[] source = color[i];
 			float[] delta = color[i + 2];
 
-			for (int j = 0; j < 4; j++) {
+			for (int j = 0; j < 4; j++)
+			{
 				source[j] = Tools.limitNumber(source[j] + delta[j], 0f, 1f);
 				magic.repaint();
 			}
@@ -256,12 +287,14 @@ public class TextBatchGeneratorGUI extends JFrame
 
 	private void shiftColor()
 	{
-		for (int i = 0; i < polar; i++) {
+		for (int i = 0; i < polar; i++)
+		{
 			float[] source = color[i];
 			float[] delta = color[i + 2];
 			float[] target = color[i + 4];
 
-			for (int j = 0; j < 4; j++) {
+			for (int j = 0; j < 4; j++)
+			{
 				target[j] = (float) Math.random();
 				delta[j] = (target[j] - source[j]) / steps;
 			}

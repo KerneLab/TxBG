@@ -2,6 +2,7 @@ package org.kernelab.txbg;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
@@ -36,17 +37,30 @@ public class TextBatchGenerator implements Runnable
 
 	protected static String							LAST_DIR				= ".";
 
-	static {
+	static
+	{
 		Context context = new Context();
-		context.read(new File("./lib/config.js"));
-		if (context.attr("charSetName") != null) {
-			DEFAULT_CHARSET_NAME = context.attrString("charSetName");
+
+		try
+		{
+			context.read(new File("./lib/config.js"));
+
+			if (context.has("charSetName"))
+			{
+				DEFAULT_CHARSET_NAME = context.valString("charSetName", DEFAULT_CHARSET_NAME);
+			}
+			if (context.attr("extentionLibraries") != null)
+			{
+				ExtensionLoader.getInstance().load(context.attrJSAN("extentionLibraries"));
+			}
+			if (context.attr("conditionInterpreters") != null)
+			{
+				CONDITION_INTERPRETERS = Arbiter.LoadInterpreters(context.attrJSAN("conditionInterpreters"));
+			}
 		}
-		if (context.attr("extentionLibraries") != null) {
-			ExtensionLoader.getInstance().load(context.attrJSAN("extentionLibraries"));
-		}
-		if (context.attr("conditionInterpreters") != null) {
-			CONDITION_INTERPRETERS = Arbiter.LoadInterpreters(context.attrJSAN("conditionInterpreters"));
+		catch (IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 
@@ -74,14 +88,16 @@ public class TextBatchGenerator implements Runnable
 
 	public void acceptDataFile(File data)
 	{
-		if (data != null) {
+		if (data != null)
+		{
 			acceptDataFiles(Tools.listOfArray(new LinkedList<File>(), new File[] { data }), false);
 		}
 	}
 
 	public void acceptDataFiles(List<File> list, boolean chain)
 	{
-		if (!generating()) {
+		if (!generating())
+		{
 			generating(true);
 			this.list.clear();
 			this.list.addAll(list);
@@ -102,27 +118,31 @@ public class TextBatchGenerator implements Runnable
 		int i = 0;
 		int j = 0;
 
-		for (Object o : aqm) {
-
-			if (i++ % 2 == 0) {
-
-				if ((aqmp = JSON.AsJSAN(o)) != null && !aqmp.isEmpty()) {
-
-					for (Object oa : aqmp) {
-
-						if ((ac = JSON.AsJSAN(oa)) != null) {
+		for (Object o : aqm)
+		{
+			if (i++ % 2 == 0)
+			{
+				if ((aqmp = JSON.AsJSAN(o)) != null && !aqmp.isEmpty())
+				{
+					for (Object oa : aqmp)
+					{
+						if ((ac = JSON.AsJSAN(oa)) != null)
+						{
 							as = Arbiter.Arbitrate(tags, ac, interpreters);
-						} else if ((ao = JSON.AsJSON(oa)) != null) {
-
-							if (as) {
-
+						}
+						else if ((ao = JSON.AsJSON(oa)) != null)
+						{
+							if (as)
+							{
 								JSON aq = aqms.attrJSON(j);
 
-								for (Entry<String, Object> entry : ao.entrySet()) {
+								for (Entry<String, Object> entry : ao.entrySet())
+								{
 									String key = entry.getKey();
 									Object template = entry.getValue();
 									String result = null;
-									if (template != null) {
+									if (template != null)
+									{
 										result = (aq.get(key) == null ? "" : aq.get(key))
 												+ f.reset(template.toString()).fillWith(tags).toString();
 									}
@@ -153,7 +173,8 @@ public class TextBatchGenerator implements Runnable
 	{
 		JFileChooser fc = new JFileChooser(LAST_DIR);
 
-		if (file != null) {
+		if (file != null)
+		{
 			fc.setSelectedFile(file);
 		}
 
@@ -161,8 +182,10 @@ public class TextBatchGenerator implements Runnable
 
 		File result = null;
 
-		s: while (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-			if (fc.getSelectedFile().exists()) {
+		s: while (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+		{
+			if (fc.getSelectedFile().exists())
+			{
 				switch (JOptionPane.showConfirmDialog(gui, "目标文件已存在，是否覆盖？", "保存目标冲突", JOptionPane.YES_NO_CANCEL_OPTION))
 				{
 					case JOptionPane.CANCEL_OPTION:
@@ -172,7 +195,9 @@ public class TextBatchGenerator implements Runnable
 						result = fc.getSelectedFile();
 						break s;
 				}
-			} else {
+			}
+			else
+			{
 				result = fc.getSelectedFile();
 				break;
 			}
@@ -185,24 +210,29 @@ public class TextBatchGenerator implements Runnable
 	{
 		TextFiller filler = new TextFiller();
 
-		for (Entry<String, Object> entry : tag.entrySet()) {
-
+		for (Entry<String, Object> entry : tag.entrySet())
+		{
 			Object value = entry.getValue();
 
-			if (value instanceof String) {
-
+			if (value instanceof String)
+			{
 				String tmp = (String) value;
 				String key = entry.getKey();
 
 				Object latest = tags.get(key);
-				if (latest != null) {
+				if (latest != null)
+				{
 					tmp = filler.reset(tmp).fillWith(key, latest).toString();
 					tag.put(key, tmp);
 				}
-			} else if (value instanceof JSAN) {
+			}
+			else if (value instanceof JSAN)
+			{
 				JSON t = null;
-				for (Object o : (JSAN) value) {
-					if ((t = JSON.AsJSON(o)) != null) {
+				for (Object o : (JSAN) value)
+				{
+					if ((t = JSON.AsJSON(o)) != null)
+					{
 						extendTag(t, tags);
 					}
 				}
@@ -219,18 +249,25 @@ public class TextBatchGenerator implements Runnable
 
 	protected void fillTemplates(JSAN tmps, JSON tags)
 	{
-		if (tmps != null && !tmps.isEmpty()) {
+		if (tmps != null && !tmps.isEmpty())
+		{
 
 			JSAN tc = null;
 			JSON tt = null;
 			boolean ts = true;
 
-			for (Object t : tmps) {
-				if ((tc = JSON.AsJSAN(t)) != null) {
+			for (Object t : tmps)
+			{
+				if ((tc = JSON.AsJSAN(t)) != null)
+				{
 					ts = Arbiter.Arbitrate(tags, tc, interpreters);
-				} else if (ts && (tt = JSON.AsJSON(t)) != null) {
+				}
+				else if (ts && (tt = JSON.AsJSON(t)) != null)
+				{
 					tags.putAll(extendTag(tt.clone(), tags));
-				} else if (ts && t != null) {
+				}
+				else if (ts && t != null)
+				{
 					fillTemplate(t.toString(), tags);
 				}
 			}
@@ -241,17 +278,21 @@ public class TextBatchGenerator implements Runnable
 	{
 		JSAN result = new JSAN();
 
-		if (tags != null && !tags.isEmpty()) {
-
+		if (tags != null && !tags.isEmpty())
+		{
 			JSON t = null;
 			JSAN tc = null;
 			boolean ts = true;
 
-			for (Object ot : tags) {
+			for (Object ot : tags)
+			{
 
-				if ((tc = JSON.AsJSAN(ot)) != null) {
+				if ((tc = JSON.AsJSAN(ot)) != null)
+				{
 					ts = Arbiter.Arbitrate(tag, tc, interpreters);
-				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
+				}
+				else if (ts && (t = JSON.AsJSON(ot)) != null)
+				{
 					result.add(t);
 				}
 			}
@@ -267,24 +308,29 @@ public class TextBatchGenerator implements Runnable
 		JSAN tmp = json.attrJSAN("tmp");
 		JSAN sub = json.attrJSAN("sub");
 
-		if (tag != null && !tag.isEmpty()) {
-
+		if (tag != null && !tag.isEmpty())
+		{
 			JSON t = null;
 
-			if (aqm != null && !aqm.isEmpty()) {
-
+			if (aqm != null && !aqm.isEmpty())
+			{
 				JSAN aqms = new JSAN();
 
 				JSAN aqmp = null;
 
 				int i = 0;
-				for (Object oa : aqm) {
-					if (i++ % 2 == 0 && (aqmp = JSON.AsJSAN(oa)) != null) {
+				for (Object oa : aqm)
+				{
+					if (i++ % 2 == 0 && (aqmp = JSON.AsJSAN(oa)) != null)
+					{
 						JSON ao = null;
-						for (Object o : aqmp) {
-							if (!JSON.IsJSAN(o) && (ao = JSON.AsJSON(o)) != null) {
+						for (Object o : aqmp)
+						{
+							if (!JSON.IsJSAN(o) && (ao = JSON.AsJSON(o)) != null)
+							{
 								JSON a = new JSON();
-								for (String k : ao.keySet()) {
+								for (String k : ao.keySet())
+								{
 									a.put(k, null);
 								}
 								aqms.add(a);
@@ -295,8 +341,10 @@ public class TextBatchGenerator implements Runnable
 
 				JSON temp = null;
 
-				for (Object ot : tag) {
-					if (!JSON.IsJSAN(ot) && (t = JSON.AsJSON(ot)) != null) {
+				for (Object ot : tag)
+				{
+					if (!JSON.IsJSAN(ot) && (t = JSON.AsJSON(ot)) != null)
+					{
 						temp = tags.clone();
 						temp.putAll(extendTag(t.clone(), tags));
 						accumulate(temp, aqm, aqms);
@@ -305,31 +353,34 @@ public class TextBatchGenerator implements Runnable
 
 				i = 0;
 				int j = 0;
-				for (Object oa : aqm) {
-
+				for (Object oa : aqm)
+				{
 					aqmp = JSON.AsJSAN(oa);
 
 					switch (i++ % 2)
 					{
 						case 0:
-							if (aqmp != null && !aqmp.isEmpty()) {
-
+							if (aqmp != null && !aqmp.isEmpty())
+							{
 								JSON ao = null;
 								JSON at = new JSON();
 
-								for (Object o : aqmp) {
-
-									if (!JSON.IsJSAN(o) && (ao = JSON.AsJSON(o)) != null) {
-
+								for (Object o : aqmp)
+								{
+									if (!JSON.IsJSAN(o) && (ao = JSON.AsJSON(o)) != null)
+									{
 										JSON aq = aqms.attrJSON(j++);
 
-										for (Entry<String, Object> entry : aq.entrySet()) {
+										for (Entry<String, Object> entry : aq.entrySet())
+										{
 											String k = entry.getKey();
 											Object v = entry.getValue();
-											if (v != null) {
+											if (v != null)
+											{
 												v = (at.get(k) == null ? "" : at.get(k)) + v.toString();
 											}
-											if (v != null || ao.get(k) == null) {
+											if (v != null || ao.get(k) == null)
+											{
 												at.put(k, v);
 											}
 										}
@@ -350,16 +401,20 @@ public class TextBatchGenerator implements Runnable
 			JSAN tc = null;
 			boolean ts = true;
 
-			for (Object ot : tag) {
-
-				if ((tc = JSON.AsJSAN(ot)) != null) {
+			for (Object ot : tag)
+			{
+				if ((tc = JSON.AsJSAN(ot)) != null)
+				{
 					ts = Arbiter.Arbitrate(tags, tc, interpreters);
-				} else if (ts && (t = JSON.AsJSON(ot)) != null) {
-
+				}
+				else if (ts && (t = JSON.AsJSON(ot)) != null)
+				{
 					t = t.clone();
 
-					for (Entry<String, Object> entry : t.entrySet()) {
-						if (JSON.IsJSAN(entry.getValue())) {
+					for (Entry<String, Object> entry : t.entrySet())
+					{
+						if (JSON.IsJSAN(entry.getValue()))
+						{
 							t.put(entry.getKey(), filterTagList((JSAN) entry.getValue(), tags));
 						}
 					}
@@ -369,27 +424,32 @@ public class TextBatchGenerator implements Runnable
 
 					fillTemplates(tmp, temp);
 
-					if (sub != null && !sub.isEmpty()) {
-
+					if (sub != null && !sub.isEmpty())
+					{
 						JSON s = null;
 						JSAN sc = null;
 						boolean ss = true;
 
-						for (Object os : sub) {
-
+						for (Object os : sub)
+						{
 							temp = tags.clone();
 							temp.putAll(t);
 
-							if ((sc = JSON.AsJSAN(os)) != null) {
+							if ((sc = JSON.AsJSAN(os)) != null)
+							{
 								ss = Arbiter.Arbitrate(temp, sc, interpreters);
-							} else if (ss && (s = JSON.AsJSON(os)) != null) {
+							}
+							else if (ss && (s = JSON.AsJSON(os)) != null)
+							{
 								generate(s, temp);
 							}
 						}
 					}
 				}
 			}
-		} else {
+		}
+		else
+		{
 			fillTemplates(tmp, tags);
 		}
 	}
@@ -402,7 +462,8 @@ public class TextBatchGenerator implements Runnable
 	protected TextBatchGenerator generating(boolean generating)
 	{
 		this.generating = generating;
-		if (gui != null) {
+		if (gui != null)
+		{
 			gui.processing(generating);
 		}
 		return this;
@@ -425,9 +486,10 @@ public class TextBatchGenerator implements Runnable
 		return this;
 	}
 
-	public void process(File data)
+	public void process(File data) throws IOException
 	{
-		if (!chain) {
+		if (!chain)
+		{
 			jsons.clear();
 		}
 		jsons.read(data, DEFAULT_CHARSET_NAME);
@@ -436,9 +498,10 @@ public class TextBatchGenerator implements Runnable
 
 	public void run()
 	{
-		if (list != null && list.size() > 0) {
-
-			for (File file : list) {
+		if (list != null && list.size() > 0)
+		{
+			for (File file : list)
+			{
 				LAST_DIR = file.getParent();
 				break;
 			}
@@ -446,10 +509,12 @@ public class TextBatchGenerator implements Runnable
 			File result = null;
 			PrintStream ps = null;
 
-			do {
+			do
+			{
 				result = chooseResultFile(result);
 
-				if (result == null) {
+				if (result == null)
+				{
 					break;
 				}
 
@@ -457,9 +522,12 @@ public class TextBatchGenerator implements Runnable
 
 				boolean legal = true;
 
-				if (legal) {
-					for (File file : list) {
-						if (file.getAbsolutePath().equals(resultFilePath)) {
+				if (legal)
+				{
+					for (File file : list)
+					{
+						if (file.getAbsolutePath().equals(resultFilePath))
+						{
 							legal = false;
 							JOptionPane.showMessageDialog(gui, "生成结果文件\n" + resultFilePath + "\n不能覆盖模板数据文件，请重新选择！",
 									"错误", JOptionPane.ERROR_MESSAGE);
@@ -468,40 +536,57 @@ public class TextBatchGenerator implements Runnable
 					}
 				}
 
-				if (legal) {
-					try {
+				if (legal)
+				{
+					try
+					{
 						ps = new PrintStream(result, DEFAULT_CHARSET_NAME);
-					} catch (FileNotFoundException e) {
+					}
+					catch (FileNotFoundException e)
+					{
 						legal = false;
 						JOptionPane.showMessageDialog(gui, "生成结果文件\n" + resultFilePath + "\n暂不可写入，请检查该文件是否被其他程序占用！",
 								"警告", JOptionPane.ERROR_MESSAGE);
-					} catch (UnsupportedEncodingException e) {
+					}
+					catch (UnsupportedEncodingException e)
+					{
 						e.printStackTrace();
 					}
 				}
 
-				if (legal) {
+				if (legal)
+				{
 					break;
 				}
 			} while (true);
 
-			if (result != null && ps != null) {
-
+			if (result != null && ps != null)
+			{
 				LAST_DIR = result.getParent();
 
-				for (File data : list) {
-
+				for (File data : list)
+				{
 					Tools.resetOuts();
 					Tools.debug(data.getAbsolutePath());
 					Tools.getOuts().add(ps);
 
-					try {
-
+					try
+					{
 						process(data);
-
-					} catch (RuntimeException e) {
+					}
+					catch (RuntimeException e)
+					{
 						e.printStackTrace();
 						if (JOptionPane.showConfirmDialog(gui, "不能正确解析模板数据文件：\n" + data.getAbsolutePath()
+								+ "\n是否继续处理剩余的文件？", "错误", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION)
+						{
+							break;
+						}
+					}
+					catch (IOException e)
+					{
+						e.printStackTrace();
+						if (JOptionPane.showConfirmDialog(gui, "不能正确读取模板数据文件：\n" + data.getAbsolutePath()
 								+ "\n是否继续处理剩余的文件？", "错误", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION)
 						{
 							break;
