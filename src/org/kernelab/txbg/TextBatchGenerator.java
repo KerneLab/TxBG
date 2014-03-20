@@ -14,10 +14,10 @@ import javax.swing.JOptionPane;
 
 import org.kernelab.basis.Arbiter;
 import org.kernelab.basis.Arbiter.ConditionInterpreter;
-import org.kernelab.basis.ExtensionLoader;
 import org.kernelab.basis.JSON;
 import org.kernelab.basis.JSON.Context;
 import org.kernelab.basis.JSON.JSAN;
+import org.kernelab.basis.io.ExtensionLoader;
 import org.kernelab.basis.TextFiller;
 import org.kernelab.basis.Tools;
 
