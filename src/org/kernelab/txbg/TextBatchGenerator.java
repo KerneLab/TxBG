@@ -51,7 +51,7 @@ public class TextBatchGenerator implements Runnable
 			}
 			if (context.attr("extentionLibraries") != null)
 			{
-				ExtensionLoader.getInstance().load(context.attrJSAN("extentionLibraries"));
+				ExtensionLoader.load(context.attrJSAN("extentionLibraries"));
 			}
 			if (context.attr("conditionInterpreters") != null)
 			{
