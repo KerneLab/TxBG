@@ -17,7 +17,7 @@ import org.kernelab.basis.Arbiter.ConditionInterpreter;
 import org.kernelab.basis.JSON;
 import org.kernelab.basis.JSON.Context;
 import org.kernelab.basis.JSON.JSAN;
-import org.kernelab.basis.io.ExtensionLoader;
+import org.kernelab.basis.io.Extensions;
 import org.kernelab.basis.TextFiller;
 import org.kernelab.basis.Tools;
 
@@ -51,7 +51,7 @@ public class TextBatchGenerator implements Runnable
 			}
 			if (context.attr("extentionLibraries") != null)
 			{
-				ExtensionLoader.load(context.attrJSAN("extentionLibraries"));
+				Extensions.load(context.attrJSAN("extentionLibraries"));
 			}
 			if (context.attr("conditionInterpreters") != null)
 			{
